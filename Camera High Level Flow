@@ -1,0 +1,56 @@
+From Application level to driver level.
+1. getNUmverOfCameras();
+2. getCameraInfo(int, CameraInfo);
+3. ICameraDevice::createInstance(int index, ICameraDevice);
+   （1）new QCamera2;
+   (2)QCamera2::init(int index); ---> <1> mod = getCameraHalModuel();                                             ---> [1] handle = dlopen("libqcamera2.so", RTLD_NOW);
+                                                                                                                       [2] mod = dlsym(handle, HAL_MODULE_INFO_SYM_AS_STR);
+                                                                                                                       [3] return mod;
+                                                                                                                       
+                                                                                                                       camera_module_t HAL_MODULE_INFO_SYM = {
+                                                                                                                     
+                                                                                                                            commom: camera_common,
+                                                                                                                            get_number_of_cameras:qcamera::QCamera2Factory::get_number_of_cameras,
+                                                                                                                            get_camera_info: qcamera::QCamera2Factory::get_camera_info,
+                                                                                                                            set_callbacks:NULL,
+                                                                                                                            get_vendor_tag_ops:NULL,
+                                                                                                                            reserved:{0}
+                                                                                                                       }; 
+                                                                                                                       
+                                                                                                                       hw_module_t camera_common = {
+                                                                                                                            
+                                                                                                                            tag:HARDWARE_MODULE_TAG,
+                                                                                                                            module_api_version:CAMERA_MODULE_API_VERSION_1_0,
+                                                                                                                            hal_api_version: HARDWARE_HAL_API_VERSION,
+                                                                                                                            id: CAMERA_HARDWARE_MODULE_ID,
+                                                                                                                            name:"QCamera Module",
+                                                                                                                            author: "Qualcomm Innovation Center Inc",
+                                                                                                                            methods:&qcamera::QCamera2Factory::mModuleMethods,
+                                                                                                                            dso:NULL,
+                                                                                                                            reserved: {0},
+                                                                                                                       };
+                                                                                                                       
+                                                                                                                       
+                                                                                                                       
+                                                                                                                       
+                                                                                                                       
+                                                                                                                       
+                                                                                                                       
+   
+                                      <2> mod->common.methods->open(hw_module_t*, idStr, (hw_device_t**)&dev_); --->   hw_module_methods_t QCamera2Factory::mModuleMethods= {          
+                                                                                                                       
+                                                                                                                            open: QCamera2Factory::camera_device_open,      ---> gQCamera2Factory.cameraDeviceOpen(id, hw_device); ---> {1} hw = new QCamera2HardwareInterface(camera_id);
+                                                                                                                                                                                                                                        {2} hw->openCamera(hw_device);                     ---> '1' QCamera2HardwareInterface::openCamera();  --->  "1" camera_open(index) defined in the mm_camera_interface.c   ---> (1) cam_obj = malloc(sizeof(mm_camera_obj_t));
+                                                                                                                                                                                                                                                                                                                                                                                                                           cam_obj->my_hdl = mm_camera_util_generate_handler(index);
+                                                                                                                                                                                                                                                                                                                                                                                                                           cam_obj->vtbl.camera_handle = cam_obj->my_hdl;
+                                                                                                                                                                                                                                                                                                                                                                                                                           cam_obj->vtbl.ops = &mm_camera_ops;
+                                                                                                                                                                                                                                                                                                                                                                                                                       (2) mm_camera_open(cam_obj);                                   ---> (1) open(dev_name, O_RDWR | O_NONBLOCK);  this is used for V4L2 driver interface.
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           (2) mm_camera_socket_create(cam_idx, MM_CAMERA_SOCK_TYPE_UDP); //create socket for video stream
+                                                                                                                                                                                                                                                                                                                                                                                                                       
+                                                                                                                       };
+                                      <3> dev_->ops-set_callbacks(dev_, QCamera2::notify_callback,
+                                                                  QCamera2::data_callback,
+                                                                  QCamera2::data_timestamp_callback,
+                                                                  CameraMemory::requestMemory, this);
+                                      <4> dev_->ops-enable_msg_type(dev_, CAMERA_MSG_ERROR);
+   (3)
