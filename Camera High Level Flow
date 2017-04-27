@@ -64,3 +64,16 @@ From Application level to driver level.
                                                                   CameraMemory::requestMemory, this);
                                       <4> dev_->ops-enable_msg_type(dev_, CAMERA_MSG_ERROR);
    (3)
+   
+4. CameraParams::init(mCamera)        ---> 1. ICameraDevice::getParameters(0,0, &paramBufSize);
+                                           2. paramBuf = calloc(paramBufSize+1, 1);
+                                           3. ICameraDevice::getParameter(paramBuf, paramBufSize);
+5. CameraParams::setInt();
+6. CameraParams::setPreviewSize();    --->
+7. CameraParams::setVideoSize();
+8. CameraParams::setPictureSize();
+9. CameraParams::setPreviewFpsRange();
+10.CameraParams::setVideoFPS();
+11.CameraParams::set(); //other parameters
+12.CameraParams::commit();
+13.
