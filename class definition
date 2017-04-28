@@ -1,0 +1,13 @@
+class QCamera2: public ICameraDevice
+{
+  ...;
+}
+class QCamera2Frame: public ICameraFrame
+{
+  ...;
+}
+class QCamera2HardwareInterface: public QCameraAllocator, public QCameraThermalCallback, 
+                                 public QCameraAdjustFPS, public QCameraTorchInterface
+{
+  ...;
+}
