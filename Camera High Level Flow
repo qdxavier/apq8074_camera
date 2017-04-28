@@ -54,7 +54,7 @@ From Application level to driver level.
                                                                                                                                                                                                                                                                                                                                                                                                                                  cam_obj->my_hdl = mm_camera_util_generate_handler(index);
                                                                                                                                                                                                                                                                                                                                                                                                                                  cam_obj->vtbl.camera_handle = cam_obj->my_hdl;
                                                                                                                                                                                                                                                                                                                                                                                                                                  cam_obj->vtbl.ops = &mm_camera_ops;
-                                                                                                                                                                                                                                                                                                                                                                                                                             (2) mm_camera_open(cam_obj);                                   ---> (1) open(dev_name, O_RDWR | O_NONBLOCK);  this is used for V4L2 driver interface.
+                                                                                                                                                                                                                                                                                                                                                                                                                             (2) mm_camera_open(cam_obj); (in mm_camera.c)                  ---> (1) open(dev_name, O_RDWR | O_NONBLOCK);  this is used for V4L2 driver interface.
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  (2) mm_camera_socket_create(cam_idx, MM_CAMERA_SOCK_TYPE_UDP); //create socket for video stream
                                                                                                                                                                                                                                                                                                                                                                                                                        
                                                                                                                        };
@@ -75,5 +75,44 @@ From Application level to driver level.
 9. CameraParams::setPreviewFpsRange();
 10.CameraParams::setVideoFPS();
 11.CameraParams::set(); //other parameters
-12.CameraParams::commit();
+12.CameraParams::commit();           ---> QCamera2::setParameters(const ICameraParameters & params)      --->dev_->ops->set_parameters(dev_, buffer.str().c_str());      --->QCamera2HardwareInterface::set_parameters(device, parms);                                             --->mm_camera_intf_set_parms(handle, parms)  --->(mm_camera.c) mm_caera_set_parms(my_obj, parms)      --->  mm_camera_util_s_ctrl(fd, id, *value);
+                                                                                                             typedef struct camera_device {
+                                                                                                                hw_device_t common;
+                                                                                                                camera_device_ops_t *ops;
+                                                                                                                void *priv;
+                                                                                                             }camera_device_t; which defined in camera.h
+                                                                                                             
+                                                                                                             
+                                                                                                             
+                                                                                                             static mm_camera_ops_t mm_camera_ops = {
+                                                                                                             .query_capability = mm_camera_intf_query_capability,
+                                                                                                             .register_event_notify = mm_camera_intf_register_event_notify,
+                                                                                                             .close_camera = mm_camera_intf_close,
+                                                                                                             .set_parms = mm_camera_intf_set_parms,
+                                                                                                             .get_parms = mm_camera_intf_get_parms,
+                                                                                                             .do_auto_focus = mm_camera_intf_do_auto_focus,
+                                                                                                             .cancel_auto_focus = mm_camera_intf_cancel_auto_focus,
+                                                                                                             .prepare_snapshot = mm_camera_intf_prepare_snapshot,
+                                                                                                             .map_buf = mm_camera_intf_map_buf,
+                                                                                                             .unmap_buf = mm_camera_intf_unmap_buf,
+                                                                                                             .add_channel = mm_camera_intf_add_channel,
+                                                                                                             .delete_channel = mm_camera_intf_del_channel,
+                                                                                                             .get_bundle_info = mm_camera_intf_get_bundle_info,
+                                                                                                             .add_stream = mm_camera_intf_add_stream,
+                                                                                                             .link_stream = mm_camera_intf_link_stream,
+                                                                                                             .delete_stream = mm_camera_intf_del_stream,
+                                                                                                             .config_stream = mm_camera_intf_config_stream,
+                                                                                                             .qbuf = mm_camera_intf_qbug,
+                                                                                                             .map_stream_buf = mm_camera_intf_map_stream_buf,
+                                                                                                             .unmap_stream_buf = mm_camera_intf_umap_stream_buf,
+                                                                                                             .set_stream_parms = mm_camera_intf_set_stream_parms,
+                                                                                                             .get_stream_parms = mm_camera_intf_get_stream_parms,
+                                                                                                             .start_channel = mm_camera_intf_start_channel,
+                                                                                                             .stop_channel = mm_camera_intf_stop_channel,
+                                                                                                             .request_super_buf = mm_camera_intf_request_super_buf,
+                                                                                                             .cancel_super_buf_request = mm_camera_intf_cancel_super_buf_request,
+                                                                                                             .flush_super_buf_request = mm_camera_intf_flush_super_buf_request,
+                                                                                                             .configure_notify_mode = mm_camera_intf_configure_notify_mode,
+                                                                                                             .process_advanced_capture = mm_camera_intf_process_advanced_caputure,
+                                                                                                             }
 13.
